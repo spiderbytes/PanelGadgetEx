@@ -1,0 +1,127 @@
+﻿
+EnableExplicit
+
+Procedure SortableCallback(event, ui)
+  
+  ; [...]  
+  
+EndProcedure
+
+Procedure PanelGadgetSetSortable(PanelGadget, Flag=#True, Callback=#Null)
+  
+  ; https://api.jqueryui.com/sortable/
+  
+  If GadgetType(PanelGadget) <> #PB_GadgetType_Panel : ProcedureReturn : EndIf
+  
+  Protected GID = GadgetID(PanelGadget)  
+  
+  If Flag = #True 
+    
+    ! $(v_gid.div).find("div[role='tablist']").sortable({
+    !   containment: "parent",
+    !   activate: function( event, ui ) { if (v_callback != 0) return v_callback (event, ui) },
+    !   beforeStop: function( event, ui ) { if (v_callback != 0) return v_callback (event, ui) },
+    !   change: function( event, ui ) { if (v_callback != 0) return v_callback (event, ui) },
+    !   create: function( event, ui ) { if (v_callback != 0) return v_callback (event, ui) },
+    !   deactivate: function( event, ui ) { if (v_callback != 0) return v_callback (event, ui) },
+    !   out: function( event, ui ) { if (v_callback != 0) return v_callback (event, ui) },
+    !   over: function( event, ui ) { if (v_callback != 0) return v_callback (event, ui) },
+    !   receive: function( event, ui ) { if (v_callback != 0) return v_callback (event, ui) },
+    !   remove: function( event, ui ) { if (v_callback != 0) return v_callback (event, ui) },
+    !   sort: function( event, ui ) { if (v_callback != 0) return v_callback (event, ui) },
+    !   start: function( event, ui ) { if (v_callback != 0) return v_callback (event, ui) },
+    !   stop: function( event, ui ) { if (v_callback != 0) return v_callback (event, ui) },
+    !   update: function( event, ui ) { if (v_callback != 0) return v_callback (event, ui) },    
+    ! });
+    
+  Else
+    
+    ! $(v_gid.div).find("div[role='tablist']").sortable("destroy");
+    
+  EndIf
+  
+EndProcedure
+
+Procedure PanelGadgetSetItemCloseCallback(PanelGadget, Position, Callback)
+  
+  If GadgetType(PanelGadget) <> #PB_GadgetType_Panel : ProcedureReturn : EndIf
+  If Position < 0 : Position = 0 : EndIf
+  If Position > CountGadgetItems(PanelGadget) - 1 : Position = CountGadgetItems(PanelGadget) - 1 : EndIf
+  
+  Protected GID = GadgetID(PanelGadget)
+  
+  ! dijit.byId(v_gid.gadget.id).getChildren()[v_position].set("onClose", function() { v_callback(v_panelgadget, v_position); } )
+  
+EndProcedure
+
+Procedure PanelGadgetSetItemClosable(PanelGadget, Position, Closable)
+  
+  If GadgetType(PanelGadget) <> #PB_GadgetType_Panel : ProcedureReturn : EndIf
+  If Position < 0 : Position = 0 : EndIf
+  If Position > CountGadgetItems(PanelGadget) - 1 : Position = CountGadgetItems(PanelGadget) - 1 : EndIf
+  
+  Protected GID = GadgetID(PanelGadget)
+  
+  ! dijit.byId(v_gid.gadget.id).getChildren()[v_position].set("closable", v_closable)
+  
+EndProcedure
+
+Procedure PanelGadgetSetItemDisabled(PanelGadget, Position, Disabled)
+  
+  If GadgetType(PanelGadget) <> #PB_GadgetType_Panel : ProcedureReturn : EndIf
+  If Position < 0 : Position = 0 : EndIf
+  If Position > CountGadgetItems(PanelGadget) - 1 : Position = CountGadgetItems(PanelGadget) - 1 : EndIf
+  
+  Protected GID = GadgetID(PanelGadget)
+  
+  ! dijit.byId(v_gid.gadget.id).getChildren()[v_position].set("disabled", v_disabled)
+  
+EndProcedure
+
+CompilerIf #PB_Compiler_IsMainFile
+  
+  Procedure Panel_onClose(PanelGadget, Position)
+    
+    Protected PanelText.s = GetGadgetItemText(PanelGadget, Position)
+    Protected ItemCounter
+    
+    ! if (confirm('Do you really want to close ' + v_paneltext + '?')) {
+    RemoveGadgetItem(PanelGadget, Position)
+    ; Reset the Callback with the new indices:
+    For ItemCounter = 0 To CountGadgetItems(PanelGadget) -1
+      PanelGadgetSetItemCloseCallback(PanelGadget, ItemCounter, @Panel_onClose())
+    Next
+    !  }
+    
+  EndProcedure
+  
+  Enumeration
+    #Window
+    #PanelGadget
+  EndEnumeration
+  
+  
+  ; Shows using of several panels...
+  OpenWindow(#Window, 0, 0, 800, 220, "PanelGadget", #PB_Window_SystemMenu | #PB_Window_ScreenCentered)
+  PanelGadget(#PanelGadget, 10, 10, WindowWidth(#Window) - 20, 200)
+  
+  Define PanelCounter
+  
+  For PanelCounter = 0 To 4
+    
+    AddGadgetItem (#PanelGadget, -1, "Panel " + Str(PanelCounter + 1))
+    
+  Next
+  
+  CloseGadgetList()
+  
+  ! $("head").append("<style>.tabLabel:focus{outline: none;}</style>"); // remove the ugly hover-border around the panel-text
+  
+  For PanelCounter = 0 To 4
+    PanelGadgetSetItemCloseCallback(#PanelGadget, PanelCounter, @Panel_onClose())
+    PanelGadgetSetItemClosable     (#PanelGadget, PanelCounter, #True)
+  Next
+  
+  PanelGadgetSetSortable(#PanelGadget, #True, @SortableCallback())
+  
+CompilerEndIf
